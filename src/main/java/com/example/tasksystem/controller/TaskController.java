@@ -7,6 +7,7 @@ import com.example.tasksystem.model.Task;
 import com.example.tasksystem.model.TaskStatus;
 import com.example.tasksystem.repository.EmployeeRepository;
 import com.example.tasksystem.service.TaskService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,7 +24,7 @@ public class TaskController {
     private final EmployeeRepository employeeRepository; // Used for simple lookups in controller mapping
 
     @PostMapping
-    public ResponseEntity<TaskResponseDTO> createTask(@RequestBody TaskRequestDTO requestDTO) {
+    public ResponseEntity<TaskResponseDTO> createTask(@Valid @RequestBody TaskRequestDTO requestDTO) {
         Employee creator = employeeRepository.findById(requestDTO.getCreatedById())
                 .orElseThrow(() -> new IllegalArgumentException("Creator employee not found"));
         
