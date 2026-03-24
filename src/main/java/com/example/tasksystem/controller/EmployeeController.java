@@ -2,6 +2,7 @@ package com.example.tasksystem.controller;
 
 import com.example.tasksystem.dto.EmployeeDTO;
 import com.example.tasksystem.service.EmployeeService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,7 +17,7 @@ public class EmployeeController {
     private final EmployeeService employeeService;
 
     @PostMapping
-    public ResponseEntity<EmployeeDTO> createEmployee(@RequestBody EmployeeDTO employeeDTO) {
+    public ResponseEntity<EmployeeDTO> createEmployee(@Valid @RequestBody EmployeeDTO employeeDTO) {
         return ResponseEntity.ok(employeeService.createEmployee(employeeDTO));
     }
 

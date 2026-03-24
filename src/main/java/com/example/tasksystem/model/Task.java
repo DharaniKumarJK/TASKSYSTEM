@@ -2,6 +2,9 @@ package com.example.tasksystem.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDate;
 
 @Entity
@@ -11,6 +14,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@EntityListeners(AuditingEntityListener.class)
 public class Task {
 
     @Id
@@ -37,4 +41,12 @@ public class Task {
 
     @Column(name = "due_date")
     private LocalDate dueDate;
+
+    @CreatedDate
+    @Column(name = "created_at", updatable = false)
+    private java.time.LocalDateTime createdAt;
+
+    @LastModifiedDate
+    @Column(name = "updated_at")
+    private java.time.LocalDateTime updatedAt;
 }

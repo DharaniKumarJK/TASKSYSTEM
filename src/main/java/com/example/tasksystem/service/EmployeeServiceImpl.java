@@ -4,6 +4,7 @@ import com.example.tasksystem.dto.EmployeeDTO;
 import com.example.tasksystem.model.Employee;
 import com.example.tasksystem.repository.EmployeeRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,6 +13,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class EmployeeServiceImpl implements EmployeeService {
 
     private final EmployeeRepository employeeRepository;
@@ -19,11 +21,13 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     @Transactional
     public EmployeeDTO createEmployee(EmployeeDTO employeeDTO) {
+        log.info("Creating new employee: {}", employeeDTO.getEmail());
         Employee employee = Employee.builder()
                 .name(employeeDTO.getName())
                 .email(employeeDTO.getEmail())
                 .build();
         employee = employeeRepository.save(employee);
+        log.info("Employee created with ID: {}", employee.getId());
         return mapToDTO(employee);
     }
 
