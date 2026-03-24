@@ -18,6 +18,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.stream.Collectors;
 
 @Service
@@ -35,10 +37,13 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Transactional
     public EmployeeDTO createEmployee(EmployeeDTO employeeDTO) {
         log.info("Creating new employee: {}", employeeDTO.getEmail());
+        Set<String> roles = employeeDTO.getRoles() != null ? employeeDTO.getRoles() : new HashSet<>(Set.of("ROLE_USER"));
+        
         Employee employee = Employee.builder()
                 .name(employeeDTO.getName())
                 .email(employeeDTO.getEmail())
                 .password(passwordEncoder.encode("default123"))
+                .roles(roles)
                 .build();
         employee = employeeRepository.save(employee);
         log.info("Employee created with ID: {}", employee.getId());
@@ -53,10 +58,13 @@ public class EmployeeServiceImpl implements EmployeeService {
             throw new IllegalArgumentException("Email already exists");
         }
 
+        Set<String> roles = registerRequest.getRoles() != null ? registerRequest.getRoles() : new HashSet<>(Set.of("ROLE_USER"));
+
         Employee employee = Employee.builder()
                 .name(registerRequest.getName())
                 .email(registerRequest.getEmail())
                 .password(passwordEncoder.encode(registerRequest.getPassword()))
+                .roles(roles)
                 .build();
 
         Employee savedEmployee = employeeRepository.save(employee);
@@ -84,6 +92,7 @@ public class EmployeeServiceImpl implements EmployeeService {
                 .id(employee.getId())
                 .name(employee.getName())
                 .email(employee.getEmail())
+                .roles(employee.getRoles())
                 .build();
     }
 
@@ -106,6 +115,7 @@ public class EmployeeServiceImpl implements EmployeeService {
                 .id(employee.getId())
                 .name(employee.getName())
                 .email(employee.getEmail())
+                .roles(employee.getRoles())
                 .build();
     }
 }

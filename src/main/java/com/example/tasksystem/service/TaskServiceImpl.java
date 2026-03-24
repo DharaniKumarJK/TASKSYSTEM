@@ -1,5 +1,7 @@
 package com.example.tasksystem.service;
 
+import com.example.tasksystem.dto.TaskRequestDTO;
+import com.example.tasksystem.dto.TaskResponseDTO;
 import com.example.tasksystem.model.Employee;
 import com.example.tasksystem.model.Task;
 import com.example.tasksystem.model.TaskStatus;
@@ -12,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -23,22 +26,32 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     @Transactional
-    public Task createTask(Task task) {
-        log.info("Creating new task: {} for creator ID: {}", task.getTitle(), task.getCreatedBy().getId());
-        if (task.getDueDate() != null && task.getDueDate().isBefore(LocalDate.now())) {
+    public TaskResponseDTO createTask(TaskRequestDTO taskRequest, Long requesterId) {
+        log.info("Creating new task: {} for creator ID: {}", taskRequest.getTitle(), requesterId);
+        
+        Employee creator = employeeRepository.findById(requesterId)
+                .orElseThrow(() -> new IllegalArgumentException("Creator (Employee) not found"));
+
+        if (taskRequest.getDueDate() != null && taskRequest.getDueDate().isBefore(LocalDate.now())) {
             throw new IllegalArgumentException("Due date cannot be in the past");
         }
-        if (task.getStatus() == null) {
-            task.setStatus(TaskStatus.TODO);
-        }
+
+        Task task = Task.builder()
+                .title(taskRequest.getTitle())
+                .description(taskRequest.getDescription())
+                .dueDate(taskRequest.getDueDate())
+                .status(TaskStatus.TODO)
+                .createdBy(creator)
+                .build();
+
         Task savedTask = taskRepository.save(task);
         log.info("Task created with ID: {}", savedTask.getId());
-        return savedTask;
+        return mapToResponseDTO(savedTask);
     }
 
     @Override
     @Transactional
-    public Task assignTask(Long taskId, Long employeeId) {
+    public TaskResponseDTO assignTask(Long taskId, Long employeeId) {
         log.info("Assigning task ID: {} to employee ID: {}", taskId, employeeId);
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new IllegalArgumentException("Task not found"));
@@ -46,17 +59,19 @@ public class TaskServiceImpl implements TaskService {
                 .orElseThrow(() -> new IllegalArgumentException("Employee not found"));
         
         task.setAssignedTo(employee);
-        return taskRepository.save(task);
+        Task updatedTask = taskRepository.save(task);
+        return mapToResponseDTO(updatedTask);
     }
 
     @Override
     @Transactional
-    public Task updateTaskStatus(Long taskId, TaskStatus status) {
+    public TaskResponseDTO updateTaskStatus(Long taskId, TaskStatus status) {
         log.info("Updating status for task ID: {} to {}", taskId, status);
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new IllegalArgumentException("Task not found"));
         task.setStatus(status);
-        return taskRepository.save(task);
+        Task updatedTask = taskRepository.save(task);
+        return mapToResponseDTO(updatedTask);
     }
 
     @Override
@@ -66,6 +81,8 @@ public class TaskServiceImpl implements TaskService {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new IllegalArgumentException("Task not found"));
         
+        // creator check is redundant if using @PreAuthorize on controller, 
+        // but good for extra safety.
         if (!task.getCreatedBy().getId().equals(requesterId)) {
             log.warn("Unauthorized delete attempt for task ID: {} by requester ID: {}", taskId, requesterId);
             throw new IllegalStateException("Only the creator can delete this task");
@@ -76,9 +93,23 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public List<Task> getTasksByEmployee(Long employeeId) {
+    public List<TaskResponseDTO> getTasksByEmployee(Long employeeId) {
         Employee employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new IllegalArgumentException("Employee not found"));
-        return taskRepository.findByAssignedTo(employee);
+        return taskRepository.findByAssignedTo(employee).stream()
+                .map(this::mapToResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    private TaskResponseDTO mapToResponseDTO(Task task) {
+        return TaskResponseDTO.builder()
+                .id(task.getId())
+                .title(task.getTitle())
+                .description(task.getDescription())
+                .dueDate(task.getDueDate())
+                .status(task.getStatus())
+                .assignedToName(task.getAssignedTo() != null ? task.getAssignedTo().getName() : "Unassigned")
+                .createdByName(task.getCreatedBy().getName())
+                .build();
     }
 }

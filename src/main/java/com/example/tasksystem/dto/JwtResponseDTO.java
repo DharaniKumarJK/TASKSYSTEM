@@ -14,4 +14,5 @@ public class JwtResponseDTO {
     private Long id;
     private String name;
     private String email;
+    private java.util.Set<String> roles;
 }

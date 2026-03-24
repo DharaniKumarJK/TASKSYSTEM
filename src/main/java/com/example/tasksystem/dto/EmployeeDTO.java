@@ -18,4 +18,6 @@ public class EmployeeDTO {
     @NotBlank(message = "Email is required")
     @Email(message = "Invalid email format")
     private String email;
+
+    private java.util.Set<String> roles;
 }
