@@ -1,6 +1,7 @@
 package com.example.tasksystem.controller;
 
 import com.example.tasksystem.dto.EmployeeDTO;
+import com.example.tasksystem.dto.JwtResponseDTO;
 import com.example.tasksystem.dto.LoginRequestDTO;
 import com.example.tasksystem.dto.RegisterRequestDTO;
 import com.example.tasksystem.service.EmployeeService;
@@ -22,7 +23,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<EmployeeDTO> login(@Valid @RequestBody LoginRequestDTO loginRequest) {
+    public ResponseEntity<JwtResponseDTO> login(@Valid @RequestBody LoginRequestDTO loginRequest) {
         return ResponseEntity.ok(employeeService.loginEmployee(loginRequest));
     }
 }
