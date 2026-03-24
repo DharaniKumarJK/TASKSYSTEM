@@ -12,4 +12,5 @@ public interface TaskService {
     TaskResponseDTO updateTaskStatus(Long taskId, TaskStatus status);
     void deleteTask(Long taskId, Long requesterId);
     List<TaskResponseDTO> getTasksByEmployee(Long employeeId);
+    List<TaskResponseDTO> getMyTasks(String email);
 }

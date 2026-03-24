@@ -101,6 +101,16 @@ public class TaskServiceImpl implements TaskService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<TaskResponseDTO> getMyTasks(String email) {
+        log.info("Fetching tasks for currently logged-in user: {}", email);
+        Employee employee = employeeRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Employee not found"));
+        return taskRepository.findByAssignedTo(employee).stream()
+                .map(this::mapToResponseDTO)
+                .collect(Collectors.toList());
+    }
+
     private TaskResponseDTO mapToResponseDTO(Task task) {
         return TaskResponseDTO.builder()
                 .id(task.getId())

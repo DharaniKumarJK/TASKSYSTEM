@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
 
 @RestController
@@ -18,6 +19,11 @@ import java.util.List;
 public class TaskController {
 
     private final TaskService taskService;
+
+    @GetMapping("/me")
+    public ResponseEntity<List<TaskResponseDTO>> getMyTasks(Principal principal) {
+        return ResponseEntity.ok(taskService.getMyTasks(principal.getName()));
+    }
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
