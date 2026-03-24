@@ -1,12 +1,19 @@
 package com.example.tasksystem.service;
 
 import com.example.tasksystem.dto.EmployeeDTO;
+import com.example.tasksystem.dto.JwtResponseDTO;
 import com.example.tasksystem.dto.LoginRequestDTO;
 import com.example.tasksystem.dto.RegisterRequestDTO;
 import com.example.tasksystem.model.Employee;
 import com.example.tasksystem.repository.EmployeeRepository;
+import com.example.tasksystem.security.JwtUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +26,10 @@ import java.util.stream.Collectors;
 public class EmployeeServiceImpl implements EmployeeService {
 
     private final EmployeeRepository employeeRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final AuthenticationManager authenticationManager;
+    private final JwtUtils jwtUtils;
+    private final UserDetailsService userDetailsService;
 
     @Override
     @Transactional
@@ -27,7 +38,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         Employee employee = Employee.builder()
                 .name(employeeDTO.getName())
                 .email(employeeDTO.getEmail())
-                .password("default123") // Default password
+                .password(passwordEncoder.encode("default123"))
                 .build();
         employee = employeeRepository.save(employee);
         log.info("Employee created with ID: {}", employee.getId());
@@ -45,7 +56,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         Employee employee = Employee.builder()
                 .name(registerRequest.getName())
                 .email(registerRequest.getEmail())
-                .password(registerRequest.getPassword())
+                .password(passwordEncoder.encode(registerRequest.getPassword()))
                 .build();
 
         Employee savedEmployee = employeeRepository.save(employee);
@@ -54,18 +65,26 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
-    public EmployeeDTO loginEmployee(LoginRequestDTO loginRequest) {
+    public JwtResponseDTO loginEmployee(LoginRequestDTO loginRequest) {
         log.info("Login attempt for email: {}", loginRequest.getEmail());
+        
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword())
+        );
+
         Employee employee = employeeRepository.findByEmail(loginRequest.getEmail())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid email or password"));
 
-        if (!employee.getPassword().equals(loginRequest.getPassword())) {
-            log.warn("Invalid password for email: {}", loginRequest.getEmail());
-            throw new IllegalArgumentException("Invalid email or password");
-        }
+        UserDetails userDetails = userDetailsService.loadUserByUsername(employee.getEmail());
+        String jwt = jwtUtils.generateToken(userDetails);
 
         log.info("Login successful for email: {}", loginRequest.getEmail());
-        return mapToDTO(employee);
+        return JwtResponseDTO.builder()
+                .token(jwt)
+                .id(employee.getId())
+                .name(employee.getName())
+                .email(employee.getEmail())
+                .build();
     }
 
     @Override
